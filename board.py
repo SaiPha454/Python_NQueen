@@ -7,12 +7,16 @@ class Game (Welcome, NCanvas, MenuBar, Queens, ControlPanel):
 
     def __init__(self, queens) :
 
-        self.queens = queens
+
         self.board_size = 400
         self.window = Tk()
         self.window.resizable(False, False)
         self.window.title("N-Qeen")
+        self.queens = IntVar()
+        self.queens.set(queens)
+        self.palaces = []
 
+        self.queen_icon = PhotoImage(file="queen.png")
         self.queen_img = PhotoImage(file="queen.png")
         self.setting_img = PhotoImage(file="setting.png")
 
@@ -46,10 +50,10 @@ class Game (Welcome, NCanvas, MenuBar, Queens, ControlPanel):
         ControlPanel.__init__(self)
 
         self.create_menubar()
-        self.draw_board(self.queens)
+        self.draw_board(self.queens.get())
         self.render_queens()
         self.create_control_panel()
 
 
-gameboard = Game(8)
+gameboard = Game(4)
 gameboard.window.mainloop()

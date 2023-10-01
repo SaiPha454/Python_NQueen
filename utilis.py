@@ -1,8 +1,9 @@
 from tkinter import *
+from tkinter import Toplevel
 
 class NButton :
 
-    def __init__(self, parent, text, color) :
+    def __init__(self, parent, text, color, callback = lambda : None ) :
         self.__parent = parent
         self.__width = 20
         self.__hieght = 2
@@ -15,8 +16,13 @@ class NButton :
                            text=self.__text,
                            bg=self.__color,
                            font=("Arial", 12),
+                           command=callback
                            )
         self.__btn.pack(anchor=CENTER, pady=20)
+    
+    def click(self) :
+        print("Click Button")
+    
 
 class Welcome :
 
@@ -45,6 +51,10 @@ class NCanvas :
         self.__size = size
         self.__parent = parent
 
+        self.create_canvas()
+
+    def create_canvas(self) :
+
         canvas = Canvas(self.__parent,
                         width=self.__size, 
                         height=self.__size,
@@ -53,13 +63,13 @@ class NCanvas :
         canvas.grid(row=1, column=0)
         self.canvas = canvas
 
-
     def draw_board(self, queens) :
 
-        if not hasattr(self, "canvas") :
-            self.canvas.create_canvas(parent=self.__parent)
+        
 
-        box_size = int(self.__size/queens)
+        self.create_canvas()
+
+        box_size = self.__size/queens
 
         for row in range(0,queens) :
 
@@ -71,28 +81,69 @@ class NCanvas :
                 if (row + col) % 2 != 0 :
                     color = "gray"
 
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill=color)
+                id = self.canvas.create_rectangle(x1, y1, x2, y2, fill=color)
+                self.palaces.append(id)
+        
+        for i in self.palaces :
+            self.canvas.tag_bind(i, "<Button-1>", self.add_queen)
 
-    def clear_board(self) :
-        self.canvas.delete(all)
+    def reset_board(self) :
+
+        self.palaces= []
+        self.draw_board(self.queens.get())
+        self.render_queens()
+    
+    def add_queen(self, event) :
+
+        rect = event.widget.find_overlapping(event.x, event.y, event.x+5, event.y+5)
+        rect = self.canvas.coords(self.canvas.find_withtag(rect[0]))
+        x = rect[0] + (rect[2] - rect[0])/2
+        y = rect[1] + (rect[3] - rect[1])/2
+        self.canvas.create_image(x, y, image = self.queen_img, anchor =CENTER)
+
+class LevelConfigBox :
+
+    def __init__(self) -> None:
+        self.__level = IntVar()
+        self.__level.set(self.queens.get())
+    
+    def create_level_config_box(self):
+
+        level_window = Toplevel(self.window)
+        level_window.geometry("400x300")
+        level_window.resizable(False, False)
+        level_window.title("Level Setting")
+
+        label = Label(level_window, text="Level :", font=("Arial", 14))
+        label.pack(pady= 10)
+
+        level_box = Entry(level_window, 
+                          textvariable=self.__level,
+                          width=15,
+                          font=("Arial", 14)
+                          )
+        level_box.pack(padx=10, pady=10)
+
+        level_button = NButton( level_window,"Set", "#4287f5", self.change_level)
+
+    def change_level(self) :
+
+        self.queens.set(self.__level.get())
+        self.reset_board()
 
 
-
-class MenuBar :
+class MenuBar(LevelConfigBox) :
 
     def create_menubar(self) :
 
         menubar = Menu(self.window)
         filemenu = Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Level", command=self.change_level)
+        filemenu.add_command(label="Level", command=self.create_level_config_box)
         filemenu.add_command(label="Exit", command=self.exit)
         menubar.add_cascade(label="Settings", menu=filemenu, image=self.setting_img)
         self.window.config(menu=menubar)
-    def change_level(self) :
-        self.queens=5
-        self.clear_board()
-        self.draw_board(self.queens)
-        self.render_queens()
+
+        super().__init__()
 
     def exit(self) :
         exit(1)
@@ -106,9 +157,9 @@ class Queens :
         for i in parent.winfo_children() :
             i.destroy()
 
-        for i in range(0,self.queens) :
+        for i in range(0,self.queens.get()) :
             image_label = Label(parent, 
-                            image=self.queen_img,
+                            image=self.queen_icon,
                             width=50,
                             height=40,
                             )
