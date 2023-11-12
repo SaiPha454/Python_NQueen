@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import Toplevel
+from tkinter.messagebox import showwarning
 
 class NButton :
 
@@ -42,6 +43,30 @@ class Welcome :
         welcome_text.pack(anchor=CENTER)
 
 
+class Level_Label :
+
+    def __init__(self) :
+
+        self.welcome_frame = Frame(self.window)
+        self.welcome_frame.grid(row=1, 
+                           column=0, 
+                           sticky="nsew", 
+                           pady=15,
+                           columnspan=2
+                           )
+
+    def render_level_label(self) :
+        
+        self.welcome_text = Label(self.welcome_frame, 
+                             text=f"Level : {self.queens.get()}",
+                             font=("Arial", 14)
+                             )
+        self.welcome_text.pack(anchor=CENTER)
+
+    def reset_level_label(self) :
+
+        self.welcome_text.destroy()
+        self.render_level_label()
 
 
 class NCanvas :
@@ -110,6 +135,7 @@ class LevelConfigBox :
     def create_level_config_box(self):
 
         level_window = Toplevel(self.window)
+        self.__level_window = level_window
         level_window.geometry("400x300")
         level_window.resizable(False, False)
         level_window.title("Level Setting")
@@ -128,8 +154,14 @@ class LevelConfigBox :
 
     def change_level(self) :
 
-        self.queens.set(self.__level.get())
-        self.reset_board()
+        level = self.__level.get()
+        if level < 4 or level > 9 :
+            showwarning("Invalid Level", "The level is limted between 4 and 9!", parent =self.__level_window )
+        else :
+            self.queens.set(level)
+            self.reset_board()
+            self.reset_level_label()
+            self.__level_window.destroy()
 
 
 class MenuBar(LevelConfigBox) :

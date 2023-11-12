@@ -1,14 +1,14 @@
 from tkinter import *
 from tkinter import PhotoImage
-from utilis import NButton, Welcome, NCanvas, MenuBar, Queens, ControlPanel
+from utilis import NButton, Welcome, NCanvas, MenuBar, Queens, ControlPanel, Level_Label
 
 
-class Game (Welcome, NCanvas, MenuBar, Queens, ControlPanel):
+class Game (Welcome, NCanvas, MenuBar, Queens, ControlPanel, Level_Label):
 
     def __init__(self, queens) :
 
 
-        self.board_size = 400
+        self.board_size = 350
         self.window = Tk()
         self.window.resizable(False, False)
         self.window.title("N-Qeen")
@@ -22,7 +22,7 @@ class Game (Welcome, NCanvas, MenuBar, Queens, ControlPanel):
 
         
         self.body_frame = Frame(self.window)
-        self.body_frame.grid(row=1, column=0, padx=20, pady=20)
+        self.body_frame.grid(row=2, column=0, padx=20, pady=20)
 
         self.play_frame = Frame(self.body_frame)
         self.play_frame.grid(row=0, column=0)
@@ -43,17 +43,16 @@ class Game (Welcome, NCanvas, MenuBar, Queens, ControlPanel):
 
 
         Welcome.__init__(self)
+        
         MenuBar.__init__(self)
-
+        Level_Label.__init__(self)
         NCanvas.__init__(self,self.play_frame, self.board_size)
         Queens.__init__(self)
         ControlPanel.__init__(self)
 
+        
         self.create_menubar()
         self.draw_board(self.queens.get())
         self.render_queens()
         self.create_control_panel()
-
-
-gameboard = Game(4)
-gameboard.window.mainloop()
+        self.render_level_label()
