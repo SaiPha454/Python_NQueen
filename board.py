@@ -15,7 +15,7 @@ class Board(object):
         self.window.resizable(False, False)
         self.window.title("N-Queen")
         self.queens = IntVar()
-        self.queens.set(8)
+        self.queens.set(4)
 
         self.queen_icon = PhotoImage(file="queen_icon.png")
         self.queen_img = PhotoImage(file="queen.png")

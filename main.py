@@ -1,7 +1,7 @@
 from tkinter import *
-from utilis import   ConfigurationBar
+from utilis import   ConfigurationMenu
 
-class App (ConfigurationBar):
+class App (ConfigurationMenu):
 
     def __init__(self) :
 

@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import Toplevel
-from tkinter.messagebox import showwarning
+from tkinter.messagebox import showwarning, askyesno
 from board import Board
 
 class NButton :
@@ -24,12 +24,64 @@ class NButton :
         self.btn.config(disabledforeground=self.btn.cget("fg"))
         self.btn.pack(anchor=CENTER, pady=20)
 
+class GameTimeUpHandler():
+
+    def __init__(self, window) :
+        self.parent_window = window
+
+    def handler(self) :
+
+        game_over_window = Toplevel(self.parent_window)
+        game_over_window.geometry("400x200")
+        game_over_window.resizable(False, False)
+        game_over_window.title("Time Up")
+
+        label = Label(game_over_window, text="Game Over!!!", font="Arial 25 bold", fg="red")
+        label.pack(pady= 50)
+        self.center_game_over_window(game_over_window)
+
+    def center_game_over_window(self, top_window) :
+
+        root_x = self.parent_window.winfo_rootx()
+        root_y = self.parent_window.winfo_rooty()
+        root_width = self.parent_window.winfo_width()
+        root_height = self.parent_window.winfo_height()
+
+        window_width = top_window.winfo_reqwidth()
+        window_height = top_window.winfo_reqheight()
+
+        x = root_x + (root_width - window_width) // 4
+        y = root_y + (root_height - window_height) // 4
+        
+        top_window.geometry("+%d+%d" % (x, y))
+        top_window.update_idletasks()
+        top_window.grab_set()
+
+
+
+class GameSuccessHandler(GameTimeUpHandler):
+
+    def __init__(self, window):
+        super().__init__(window)
+
+    #Use polymorphism to customize the handler function
+    def handler(self, queens):
+
+        game_success_window = Toplevel(self.parent_window)
+        game_success_window.geometry("400x200")
+        game_success_window.resizable(False, False)
+        game_success_window.title("Win Game")
+
+        label = Label(game_success_window, text=f"Congraduations!!! \nYou have solved the {queens} Queens Problem.", 
+                      font="Arial 14 bold", fg="green")
+        label.pack(pady= 50)
+        self.center_game_over_window(game_success_window)
+
 
 class Level_Label(Board) :
 
     def __init__(self) :
 
-        print("Initiate Level Label...")
         # To prevent the Board class being initiated multiple times
         # as it would create multiple Tk() window object
         if not hasattr(self, "window") :
@@ -56,65 +108,17 @@ class Level_Label(Board) :
         self.render_level_label()
 
 
-class GameResultHandler(Board):
+# class for showing how many queens left to solve
+class Queens(Board) :
 
-    def __init__(self) :
-        # To prevent the Board class being initiated multiple times
-        # as it would create multiple Tk() window object
+    def __init__(self):
         if not hasattr(self, "window"):
             super().__init__()
 
-    def time_up(self) :
-
-        game_over_window = Toplevel(self.window)
-        game_over_window.geometry("400x200")
-        game_over_window.resizable(False, False)
-        game_over_window.title("Time Up")
-
-        label = Label(game_over_window, text="Game Over!!!", font="Arial 25 bold", fg="red")
-        label.pack(pady= 50)
-        self.center_game_over_window(game_over_window)
-
-        
-    def success(self):
-
-        game_success_window = Toplevel(self.window)
-        game_success_window.geometry("400x200")
-        game_success_window.resizable(False, False)
-        game_success_window.title("Win Game")
-
-        label = Label(game_success_window, text=f"Congraduations!!! \nYou have solved the {self.queens.get()} Queens Problem.", 
-                      font="Arial 14 bold", fg="green")
-        label.pack(pady= 50)
-        self.center_game_over_window(game_success_window)
-
-    def center_game_over_window(self, top_window) :
-
-        root_x = self.window.winfo_rootx()
-        root_y = self.window.winfo_rooty()
-        root_width = self.window.winfo_width()
-        root_height = self.window.winfo_height()
-
-        window_width = top_window.winfo_reqwidth()
-        window_height = top_window.winfo_reqheight()
-
-        x = root_x + (root_width - window_width) // 4
-        y = root_y + (root_height - window_height) // 4
-        
-        top_window.geometry("+%d+%d" % (x, y))
-        top_window.update_idletasks()
-        top_window.grab_set()
-
-
-# class for showing how many queens left to solve
-class Queens(GameResultHandler) :
-
-    def __init__(self):
-
-        super().__init__()
         self.col = 0
         self.breaker = 5
         self.left_queens = []
+        self.sucess_handler = GameSuccessHandler(self.window).handler
 
     def render_queens(self) :
 
@@ -136,7 +140,7 @@ class Queens(GameResultHandler) :
         if len(self.left_queens) == 0 :
 
             self.window.after_cancel(self.timer_id)
-            self.success()
+            self.sucess_handler(self.queens.get())
     
 
     def append_queens(self) :
@@ -357,7 +361,8 @@ class ControlPanel(NCanvas):
     def __init__(self):
 
         super().__init__()
-
+        self.game_over_handler = GameTimeUpHandler(self.window).handler
+        
     def create_control_panel(self ) :
         btn_frame = Frame(self.control_frame, 
                             width=self.board_size,
@@ -422,9 +427,9 @@ class ControlPanel(NCanvas):
         self.timer.config(text=f"{self.mn:02}:{self.sec:02}")
         if self.timer_on.get() and  self.mn >= self.timer_limit_mn :
             self.end_game()
-            self.time_up()
+            self.game_over_handler()
             return
-        self.timer_id = self.window.after(1000, self.start_timer)
+        self.timer_id = self.window.after(100, self.start_timer)
 
 
 # class for configuring Level and Time
@@ -535,7 +540,7 @@ class TimeConfiger:
 
 
 # Setting MenuBar
-class ConfigurationBar(LevelConfiger, TimeConfiger) :
+class ConfigurationMenu(LevelConfiger, TimeConfiger) :
 
     def __init__(self):
         LevelConfiger.__init__(self)
@@ -547,7 +552,7 @@ class ConfigurationBar(LevelConfiger, TimeConfiger) :
         filemenu = Menu(menubar, tearoff=0)
         filemenu.add_command(label="Level", command=self.create_level_config_box)
         filemenu.add_command(label="Timer", command=self.create_timer_config_box)
-        filemenu.add_command(label="Exit", command=self.exit)
+        filemenu.add_command(label="Quit", command=self.exit)
 
         menubar.add_cascade(label="Settings", menu=filemenu, image=self.setting_img)
         self.window.config(menu=menubar)
@@ -555,6 +560,9 @@ class ConfigurationBar(LevelConfiger, TimeConfiger) :
         super().__init__()
 
     def exit(self) :
-        exit(1)
+        if askyesno("Quit", "Are you sure you want to Quit?"):
+            exit(1)
+        else:
+            return
 
 
