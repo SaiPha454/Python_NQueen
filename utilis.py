@@ -23,12 +23,15 @@ class NButton :
                            )
         self.btn.config(disabledforeground=self.btn.cget("fg"))
         self.btn.pack(anchor=CENTER, pady=20)
-    
+
 
 class Level_Label(Board) :
 
     def __init__(self) :
 
+        print("Initiate Level Label...")
+        # To prevent the Board class being initiated multiple times
+        # as it would create multiple Tk() window object
         if not hasattr(self, "window") :
             super().__init__()
         self.welcome_frame = Frame(self.window)
@@ -53,19 +56,118 @@ class Level_Label(Board) :
         self.render_level_label()
 
 
-# Main class for chess board playground
-class NCanvas(Board) :
+class GameResultHandler(Board):
 
     def __init__(self) :
-        if not hasattr(self, "window") :
+        # To prevent the Board class being initiated multiple times
+        # as it would create multiple Tk() window object
+        if not hasattr(self, "window"):
             super().__init__()
+
+    def time_up(self) :
+
+        game_over_window = Toplevel(self.window)
+        game_over_window.geometry("400x200")
+        game_over_window.resizable(False, False)
+        game_over_window.title("Time Up")
+
+        label = Label(game_over_window, text="Game Over!!!", font="Arial 25 bold", fg="red")
+        label.pack(pady= 50)
+        self.center_game_over_window(game_over_window)
+
+        
+    def success(self):
+
+        game_success_window = Toplevel(self.window)
+        game_success_window.geometry("400x200")
+        game_success_window.resizable(False, False)
+        game_success_window.title("Win Game")
+
+        label = Label(game_success_window, text=f"Congraduations!!! \nYou have solved the {self.queens.get()} Queens Problem.", 
+                      font="Arial 14 bold", fg="green")
+        label.pack(pady= 50)
+        self.center_game_over_window(game_success_window)
+
+    def center_game_over_window(self, top_window) :
+
+        root_x = self.window.winfo_rootx()
+        root_y = self.window.winfo_rooty()
+        root_width = self.window.winfo_width()
+        root_height = self.window.winfo_height()
+
+        window_width = top_window.winfo_reqwidth()
+        window_height = top_window.winfo_reqheight()
+
+        x = root_x + (root_width - window_width) // 4
+        y = root_y + (root_height - window_height) // 4
+        
+        top_window.geometry("+%d+%d" % (x, y))
+        top_window.update_idletasks()
+        top_window.grab_set()
+
+
+# class for showing how many queens left to solve
+class Queens(GameResultHandler) :
+
+    def __init__(self):
+
+        super().__init__()
+        self.col = 0
+        self.breaker = 5
+        self.left_queens = []
+
+    def render_queens(self) :
+
+        self.left_queens = []
+        parent = self.queen_frame
+        for i in parent.winfo_children() :
+            i.destroy()
+
+        for i in range(0,self.queens.get()) :
+            self.append_queens()
+
+    def pop_queens(self):
+        
+        if len(self.left_queens) == 0 :
+            return
+        self.left_queens[len(self.left_queens)-1].destroy()
+        self.left_queens.pop()
+
+        if len(self.left_queens) == 0 :
+
+            self.window.after_cancel(self.timer_id)
+            self.success()
+    
+
+    def append_queens(self) :
+
+        if len(self.left_queens) > self.queens.get() :
+            return
+        
+        queen_icon = Label(self.queen_frame, 
+                            image=self.queen_icon,
+                            width=40,
+                            height=40,
+                            )
+        self.left_queens.append(queen_icon)
+        queen_icon.grid(row=0, column=len(self.left_queens))
+
+# Main class for chess board playground
+class NCanvas( Queens) :
+
+    def __init__(self) :
+
+        super().__init__()
         self.__size = self.board_size
         self.__parent = self.play_frame
         self.board = []
         self.solved_board = []
 
+
     def create_canvas(self) :
 
+        self.board = []
+        self.solved_board = []
         canvas = Canvas(self.__parent,
                         width=self.__size, 
                         height=self.__size,
@@ -73,12 +175,6 @@ class NCanvas(Board) :
                         )
         canvas.grid(row=1, column=0)
         self.canvas = canvas
-        self.create_board()        
-
-    def create_board(self) :
-
-        self.board = []
-        self.solved_board = []
         for i in range(0, self.queens.get()) :
             row = []
             for k in range(0, self.queens.get()) :
@@ -89,7 +185,6 @@ class NCanvas(Board) :
     def draw_board(self) :
 
         queens = self.queens.get()
-        self.create_canvas()
         box_size = self.__size/queens
         for row in range(0,queens) :
 
@@ -99,17 +194,13 @@ class NCanvas(Board) :
                 x2, y2 = x1+ box_size, y1+ box_size
                 color = "white"
                 if (row + col) % 2 != 0 :
-                    color = "gray"
+                    color = "#3b3a37"
 
                 id = self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, tags=f"{row},{col}", outline="gray")
-
-                self.palaces.append(id)
                 self.canvas.tag_bind(id, "<Button-1>", self.add_queen)
             
-
     def reset_board(self) :
-
-        self.palaces= []
+        self.create_canvas()
         self.draw_board()
         self.render_queens()
     
@@ -130,7 +221,7 @@ class NCanvas(Board) :
         col = int(col)
         if not self.isSafe(self.board , row, col) :
             self.canvas.itemconfig(rect, outline="#ff0f0f", width=4)
-            self.root.after(500, lambda: self.reset_warning_border(rect))
+            self.window.after(500, lambda: self.canvas.itemconfig(rect, width=1, outline="gray"))
             return
 
         rect = self.canvas.coords(self.canvas.find_withtag(rect[0])) 
@@ -142,12 +233,6 @@ class NCanvas(Board) :
         self.board[row][col] = 1
 
         self.pop_queens()
-
-
-
-    def reset_warning_border(self, rect):
-        self.canvas.itemconfig(rect, width=1, outline="gray")
-        
 
     def remove_queen(self, event) :
 
@@ -167,30 +252,6 @@ class NCanvas(Board) :
         self.board[row][col] = 0
         self.append_queens()
 
-    def solve(self):
-         col = 0
-         self.backtrack(col)
-         print(self.solved_board)
-         rectId = 1
-         for row in range(self.queens.get()) :
-             
-            for col in range(self.queens.get()) :
-                if self.solved_board[row][col] == 1 :
-                    self.canvas.itemconfig((rectId,), outline="#4FBF26", width=5)
-                rectId+=1
-    def backtrack(self, col) :
-        
-        if col >= self.queens.get() :
-            return True
-        for i in range(self.queens.get()):
-            if self.isSafe(self.solved_board, i, col) :
-                self.solved_board[i][col] = 1
-
-                if (self.backtrack(col+1)):
-                    return True
-                self.solved_board[i][col]=0
-        return False
-        
     def isSafe(self, board, row, col) :
         row_safe = self.row_check(board, row)
         col_safe = self.col_check(board, col)
@@ -263,64 +324,116 @@ class NCanvas(Board) :
         
         return upper_left and upper_right and lower_left and lower_right
 
-# class for showing how many queens left to solve
-class Queens(Board) :
-
-    def __init__(self) -> None:
-        if not hasattr(self, "window") :
-            super().__init__()
-        self.col = 0
-        self.breaker = 5
-        self.left_queens = []
-
-    def render_queens(self) :
-
-        self.left_queens = []
-        parent = self.queen_frame
-        for i in parent.winfo_children() :
-            i.destroy()
-
-        for i in range(0,self.queens.get()) :
-            self.append_queens()
-
-    def pop_queens(self):
+    # Function to generate the solution
+    def solve(self):
+         col = 0
+         self.backtrack(col)
+         print(self.solved_board)
+         rectId = 1
+         for row in range(self.queens.get()) :
+             
+            for col in range(self.queens.get()) :
+                if self.solved_board[row][col] == 1 :
+                    self.canvas.itemconfig((rectId,), outline="#4FBF26", width=5)
+                rectId+=1
+    def backtrack(self, col) :
         
-        if len(self.left_queens) == 0 :
-            return
-        self.left_queens[len(self.left_queens)-1].destroy()
-        self.left_queens.pop()
+        if col >= self.queens.get() :
+            return True
+        for i in range(self.queens.get()):
+            if self.isSafe(self.solved_board, i, col) :
+                self.solved_board[i][col] = 1
 
-        if len(self.left_queens) == 0 :
-            self.root.after_cancel(self.timer_id)
-            self.success()
+                if (self.backtrack(col+1)):
+                    return True
+                self.solved_board[i][col]=0
+        return False
+
+
+
+# Controller of the game
+class ControlPanel(NCanvas):
     
-    def append_queens(self) :
+    def __init__(self):
 
-        if len(self.left_queens) > self.queens.get() :
-            return
-        
-        image_label = Label(self.queen_frame, 
-                            image=self.queen_icon,
-                            width=40,
-                            height=40,
+        super().__init__()
+
+    def create_control_panel(self ) :
+        btn_frame = Frame(self.control_frame, 
+                            width=self.board_size,
+                            padx=50,
+                            pady=50
                             )
-        self.left_queens.append(image_label)
-        image_label.grid(row=0, column=len(self.left_queens))
+
+        btn_frame.grid(row=0, column=0, sticky="nsew")
+        
+        self.timer = Label(btn_frame, text=f"{self.mn:02}:{self.sec:02}")
+        self.timer.pack(anchor=CENTER, pady=20)
+
+        self.start_button = NButton(btn_frame, "Start Game", "#4CAF50", callback=self.start_game)
+        NButton(btn_frame, "Reset", "#4CAF50",callback=self.reset_game)
+        self.give_up_button = NButton(btn_frame, "Give Up", "#FF5733", callback=self.give_up)
+    
+    def start_game(self) :
+        
+        if self.solved :
+            self.reset_board()
+        if not self.game_started :
+            self.reset_timer()
+            self.solved = False
+            self.game_started = True
+            self.start_timer()
+        self.start_button.btn.config(state="disabled")
+    
+    def reset_game(self) :
+
+        self.reset_timer()
+        self.solved = False
+        self.game_started = False
+        self.reset_board()
+        self.start_button.btn.config(state="normal")
+    
+    def give_up(self) :
+
+        if self.game_started :
+            self.end_game()
+            self.solve()
+
+    def end_game(self) :
+        self.solved = True
+        self.game_started= False
+        self.window.after_cancel(self.timer_id)
+
+    def reset_timer(self):
+        self.mn = 0
+        self.sec = 0
+        self.timer.config(text=f"{self.mn:02}:{self.sec:02}")
+
+    def start_timer(self) :
+
+        #To prevent auto counting on change level
+        if not self.game_started :
+            return
+
+        self.sec +=1
+        if self.sec == 60:
+            self.sec = 0
+            self.mn += 1
+        self.timer.config(text=f"{self.mn:02}:{self.sec:02}")
+        if self.timer_on.get() and  self.mn >= self.timer_limit_mn :
+            self.end_game()
+            self.time_up()
+            return
+        self.timer_id = self.window.after(1000, self.start_timer)
 
 
 # class for configuring Level and Time
-class Configer(Board) : 
+class LevelConfiger(ControlPanel, Level_Label) : 
 
     def __init__(self) -> None:
-        if not hasattr(self, "window") :
-            super().__init__()
-
+        super().__init__()
         self.__level = IntVar()
         self.__level.set(self.queens.get())
-        self.timer_on = BooleanVar()
-        self.timer_on.set(True)
-        self.__timer_limit_mn = IntVar()
-        self.__timer_limit_mn.set(self.timer_limit_mn)
     
     def create_level_config_box(self):
 
@@ -345,6 +458,7 @@ class Configer(Board) :
 
     def change_level(self) :
 
+        #Exception handling when user's input is not valid
         try :
             level = self.__level.get()
             if level < 4 or level > 9 :
@@ -360,7 +474,14 @@ class Configer(Board) :
                 self.game_started = False
         except TclError:
             showwarning("Invalid input", "The level input must be integer")
-    
+
+# Timer Configer
+class TimeConfiger:
+
+    def __init__(self) :
+        
+        self.__timer_limit_mn = IntVar()
+        self.__timer_limit_mn.set(self.timer_limit_mn)
 
     def create_timer_config_box(self):
 
@@ -412,13 +533,13 @@ class Configer(Board) :
             showwarning("Invalid input", "The time input must be integer in minute")
 
 
-# Setting Menu Bar
-class MenuBar(Configer) :
 
+# Setting MenuBar
+class ConfigurationBar(LevelConfiger, TimeConfiger) :
 
-    def __init__(self) -> None:
-
-        super().__init__()
+    def __init__(self):
+        LevelConfiger.__init__(self)
+        TimeConfiger.__init__(self)
 
     def create_menubar(self) :
 
@@ -437,127 +558,3 @@ class MenuBar(Configer) :
         exit(1)
 
 
-
-# Controller of the game
-class ControlPanel(Board):
-    
-    def __init__(self):
-
-        if not hasattr(self, "window") :
-            super().__init__()
-        self.mn = 0
-        self.sec = 0
-        self.game_started = False
-        self.solved = False
-        self.root = self.window
-
-
-    def create_control_panel(self ) :
-        btn_frame = Frame(self.control_frame, 
-                            width=self.board_size,
-                            padx=50,
-                            pady=50
-                            )
-
-        btn_frame.grid(row=0, column=0, sticky="nsew")
-        
-        self.timer = Label(btn_frame, text=f"{self.mn:02}:{self.sec:02}")
-        self.timer.pack(anchor=CENTER, pady=20)
-
-        self.start_button = NButton(btn_frame, "Start Game", "#4CAF50", callback=self.start_game)
-        NButton(btn_frame, "Reset", "#4CAF50",callback=self.reset_game)
-        self.give_up_button = NButton(btn_frame, "Give Up", "#FF5733", callback=self.give_up)
-    
-    def start_game(self) :
-        
-        if self.solved :
-            self.reset_board()
-        if not self.game_started :
-            self.reset_timer()
-            self.solved = False
-            self.game_started = True
-            self.update_timer()
-        self.start_button.btn.config(state="disabled")
-    
-
-    def reset_game(self) :
-
-        self.reset_timer()
-        self.solved = False
-        self.game_started = False
-        self.reset_board()
-        self.start_button.btn.config(state="normal")
-    
-    def give_up(self) :
-
-        if self.game_started :
-            self.end_game()
-            self.solve()
-
-    def end_game(self) :
-        self.solved = True
-        self.game_started= False
-        self.root.after_cancel(self.timer_id)
-        
-    def reset_timer(self):
-        self.mn = 0
-        self.sec = 0
-        self.timer.config(text=f"{self.mn:02}:{self.sec:02}")
-
-    def update_timer(self) :
-
-        #To prevent auto counting on change level
-        if not self.game_started :
-            return
-
-        self.sec +=1
-        if self.sec == 60:
-            self.sec = 0
-            self.mn += 1
-        self.timer.config(text=f"{self.mn:02}:{self.sec:02}")
-        if self.timer_on.get() and  self.mn >= self.timer_limit_mn :
-            self.time_up()
-            return
-        self.timer_id = self.root.after(1000, self.update_timer)
-    
-    def time_up(self) :
-
-        self.end_game()
-        game_over_window = Toplevel(self.window)
-        game_over_window.geometry("400x200")
-        game_over_window.resizable(False, False)
-        game_over_window.title("Time Up")
-
-        label = Label(game_over_window, text="Game Over!!!", font="Arial 25 bold", fg="red")
-        label.pack(pady= 50)
-        self.center_game_over_window(game_over_window)
-
-        
-    def success(self):
-
-        game_success_window = Toplevel(self.window)
-        game_success_window.geometry("400x200")
-        game_success_window.resizable(False, False)
-        game_success_window.title("Win Game")
-
-        label = Label(game_success_window, text=f"Congraduations!!! \nYou have solved the {self.queens.get()} Queens Problem.", 
-                      font="Arial 14 bold", fg="green")
-        label.pack(pady= 50)
-        self.center_game_over_window(game_success_window)
-
-    def center_game_over_window(self, top_window) :
-
-        root_x = self.window.winfo_rootx()
-        root_y = self.window.winfo_rooty()
-        root_width = self.window.winfo_width()
-        root_height = self.window.winfo_height()
-
-        window_width = top_window.winfo_reqwidth()
-        window_height = top_window.winfo_reqheight()
-
-        x = root_x + (root_width - window_width) // 4
-        y = root_y + (root_height - window_height) // 4
-        
-        top_window.geometry("+%d+%d" % (x, y))
-        top_window.update_idletasks()
-        top_window.grab_set()

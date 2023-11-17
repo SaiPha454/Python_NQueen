@@ -1,23 +1,20 @@
 from tkinter import *
-from utilis import  NCanvas, MenuBar, Queens, ControlPanel, Level_Label
+from utilis import   ConfigurationBar
 
-class Game (NCanvas, MenuBar, Queens, ControlPanel, Level_Label):
+class App (ConfigurationBar):
 
     def __init__(self) :
 
-        Level_Label.__init__(self)
-        NCanvas.__init__(self)
-        Queens.__init__(self)
-        ControlPanel.__init__(self)
-        MenuBar.__init__(self)
+        super().__init__()
+        
+    def start(self):
 
+        self.render_level_label()
         self.create_menubar()
+        self.create_canvas()
         self.draw_board()
         self.render_queens()
         self.create_control_panel()
-        self.render_level_label()
-
-    def start(self):
         self.window.mainloop()
 
-Game().start()
+App().start()
