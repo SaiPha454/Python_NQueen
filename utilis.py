@@ -2,6 +2,46 @@ from tkinter import *
 from tkinter import Toplevel
 from tkinter.messagebox import showwarning
 
+class Board(object):
+
+    def __init__(self) -> None:
+        self.board_size = 400
+        self.window = Tk()
+        self.window.resizable(False, False)
+        self.window.title("N-Queen")
+        self.queens = IntVar()
+        self.queens.set(8)
+        self.palaces = []
+
+        self.queen_icon = PhotoImage(file="queen_icon.png")
+        self.queen_img = PhotoImage(file="queen.png")
+        self.setting_img = PhotoImage(file="setting.png")
+
+        #default timer limit is 3 minutes
+        self.timer_limit_mn = 1
+
+        self.body_frame = Frame(self.window)
+        self.body_frame.grid(row=2, column=0, padx=20, pady=20)
+
+        self.play_frame = Frame(self.body_frame)
+        self.play_frame.grid(row=0, column=0)
+
+        self.control_frame = Frame(self.body_frame, 
+                          width=self.board_size,
+                          )
+
+
+        self.control_frame.grid(row=0, column=1, sticky="nsew")
+
+        self.queen_frame = Frame(self.play_frame, 
+                                 width=self.board_size, 
+                                 height=20,
+                                 pady=20,
+                                 )
+        self.queen_frame.grid(row=0,column=0, rowspan=1, columnspan=6)
+
+
+
 class NButton :
 
     def __init__(self, parent, text, color, callback = lambda : None, state="normal" ) :
@@ -24,27 +64,12 @@ class NButton :
         self.btn.pack(anchor=CENTER, pady=20)
     
 
-class Welcome :
 
-    def __init__(self, text= "Welcome To NQUEENS") :
-
-        welcome_frame = Frame(self.window)
-        welcome_frame.grid(row=0, 
-                           column=0, 
-                           sticky="nsew", 
-                           pady=15,
-                           columnspan=2
-                           )
-        welcome_text = Label(welcome_frame, 
-                             text=text,
-                             font=("Arial", 16)
-                             )
-        welcome_text.pack(anchor=CENTER)
-
-
-class Level_Label :
+class Level_Label(Board) :
 
     def __init__(self) :
+        if not hasattr(self, "window") :
+            super().__init__()
 
         self.welcome_frame = Frame(self.window)
         self.welcome_frame.grid(row=1, 
@@ -68,12 +93,13 @@ class Level_Label :
         self.render_level_label()
 
 
-class NCanvas :
+class NCanvas(Board) :
 
-    def __init__(self, parent, size) :
-        
-        self.__size = size
-        self.__parent = parent
+    def __init__(self) :
+        if not hasattr(self, "window") :
+            super().__init__()
+        self.__size = self.board_size
+        self.__parent = self.play_frame
         self.board = []
         self.solved_board = []
 
@@ -98,8 +124,9 @@ class NCanvas :
             self.board.append(row)
             self.solved_board.append(row.copy())
 
-    def draw_board(self, queens) :
+    def draw_board(self) :
 
+        queens = self.queens.get()
         self.create_canvas()
 
         box_size = self.__size/queens
@@ -123,7 +150,7 @@ class NCanvas :
     def reset_board(self) :
 
         self.palaces= []
-        self.draw_board(self.queens.get())
+        self.draw_board()
         self.render_queens()
     
     def add_queen(self, event) :
@@ -278,9 +305,12 @@ class NCanvas :
         return upper_left and upper_right and lower_left and lower_right
 
 
-class LevelConfigBox : 
+class LevelConfigBox(Board) : 
 
     def __init__(self) -> None:
+        if not hasattr(self, "window") :
+            super().__init__()
+
         self.__level = IntVar()
         self.__level.set(self.queens.get())
         self.timer_on = BooleanVar()
@@ -378,46 +408,6 @@ class LevelConfigBox :
             showwarning("Invalid input", "The time input must be integer in minute")
 
 
-class TimerConfigBox : 
-
-    def __init__(self) -> None:
-        self.__level = IntVar()
-        self.__level.set(self.queens.get())
-    
-    def create_level_config_box(self):
-
-        level_window = Toplevel(self.window)
-        self.__level_window = level_window
-        level_window.geometry("400x300")
-        level_window.resizable(False, False)
-        level_window.title("Level Setting")
-
-        label = Label(level_window, text="Level :", font=("Arial", 14))
-        label.pack(pady= 10)
-
-        level_box = Entry(level_window, 
-                          textvariable=self.__level,
-                          width=15,
-                          font=("Arial", 14)
-                          )
-        level_box.pack(padx=10, pady=10)
-
-        level_button = NButton( level_window,"Set", "#4287f5", self.change_level)
-
-    def change_level(self) :
-
-        level = self.__level.get()
-        if level < 4 or level > 9 :
-            showwarning("Invalid Level", "The level is limted between 4 and 9!", parent =self.__level_window )
-        else :
-            self.queens.set(level)
-            self.reset_board()
-            self.reset_level_label()
-            self.__level_window.destroy()
-            self.reset_timer()
-
-
-
 class MenuBar(LevelConfigBox) :
 
 
@@ -442,9 +432,11 @@ class MenuBar(LevelConfigBox) :
         exit(1)
 
 
-class Queens :
+class Queens(Board) :
 
     def __init__(self) -> None:
+        if not hasattr(self, "window") :
+            super().__init__()
         self.col = 0
         self.breaker = 5
         self.left_queens = []
@@ -483,14 +475,17 @@ class Queens :
         self.left_queens.append(image_label)
         image_label.grid(row=0, column=len(self.left_queens))
 
-class ControlPanel:
+class ControlPanel(Board):
     
-    def __init__(self, root):
+    def __init__(self):
+
+        if not hasattr(self, "window") :
+            super().__init__()
         self.mn = 0
         self.sec = 0
         self.game_started = False
         self.solved = False
-        self.root = root
+        self.root = self.window
 
 
     def create_control_panel(self ) :
@@ -559,7 +554,7 @@ class ControlPanel:
         if self.timer_on.get() and  self.mn >= self.timer_limit_mn :
             self.time_up()
             return
-        self.timer_id = self.root.after(500, self.update_timer)
+        self.timer_id = self.root.after(1000, self.update_timer)
     
     def time_up(self) :
 

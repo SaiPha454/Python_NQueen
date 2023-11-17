@@ -1,4 +1,4 @@
 from board import Game
 
-gameboard = Game(4)
+gameboard = Game()
 gameboard.window.mainloop()
