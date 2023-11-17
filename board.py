@@ -1,21 +1,15 @@
 
 from tkinter import *
-
 class Board(object):
-
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(Board, cls).__new__(cls)
-        return cls.instance
 
     def __init__(self):
 
         self.board_size = 400
         self.window = Tk()
         self.window.resizable(False, False)
-        self.window.title("N-Queen")
+        self.window.title("NQueens")
         self.queens = IntVar()
-        self.queens.set(4)
+        self.queens.set(8)
 
         self.queen_icon = PhotoImage(file="queen_icon.png")
         self.queen_img = PhotoImage(file="queen.png")
@@ -41,11 +35,10 @@ class Board(object):
         self.queen_frame.grid(row=0,column=0, rowspan=1, columnspan=6)
 
         #default timer limit is 3 minutes
-        self.timer_limit_mn = 1
+        self.timer_limit_mn = 3
         self.timer_on = BooleanVar()
         self.timer_on.set(True)
         self.mn = 0
         self.sec = 0
         self.game_started = False
         self.solved = False
-
