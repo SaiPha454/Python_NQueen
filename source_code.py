@@ -11,7 +11,7 @@ class Board(object):
         self.window.resizable(False, False)
         self.window.title("NQueens")
         self.queens = IntVar()
-        self.queens.set(8)
+        self.queens.set(8) #set the default size of the game to 8 queens
 
         self.queen_icon = PhotoImage(file="queen_icon.png")
         self.queen_img = PhotoImage(file="queen.png")
@@ -478,8 +478,10 @@ class ControlPanel(NCanvas):
 # class for configuring Level and Time
 class LevelConfiger(ControlPanel, Level_Label) : 
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self) :
+
+        ControlPanel.__init__(self)
+        Level_Label.__init__(self)
         self.__level = IntVar()
         self.__level.set(self.queens.get())
     
@@ -600,7 +602,6 @@ class ConfigurationMenu(LevelConfiger, TimeConfiger) :
         menubar.add_cascade(label="Settings", menu=filemenu, image=self.setting_img)
         self.window.config(menu=menubar)
 
-        super().__init__()
 
     def exit(self) :
         if askyesno("Quit", "Are you sure you want to Quit?"):
