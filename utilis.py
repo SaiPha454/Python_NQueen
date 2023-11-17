@@ -1,46 +1,7 @@
 from tkinter import *
 from tkinter import Toplevel
 from tkinter.messagebox import showwarning
-
-class Board(object):
-
-    def __init__(self) -> None:
-        self.board_size = 400
-        self.window = Tk()
-        self.window.resizable(False, False)
-        self.window.title("N-Queen")
-        self.queens = IntVar()
-        self.queens.set(8)
-        self.palaces = []
-
-        self.queen_icon = PhotoImage(file="queen_icon.png")
-        self.queen_img = PhotoImage(file="queen.png")
-        self.setting_img = PhotoImage(file="setting.png")
-
-        #default timer limit is 3 minutes
-        self.timer_limit_mn = 1
-
-        self.body_frame = Frame(self.window)
-        self.body_frame.grid(row=2, column=0, padx=20, pady=20)
-
-        self.play_frame = Frame(self.body_frame)
-        self.play_frame.grid(row=0, column=0)
-
-        self.control_frame = Frame(self.body_frame, 
-                          width=self.board_size,
-                          )
-
-
-        self.control_frame.grid(row=0, column=1, sticky="nsew")
-
-        self.queen_frame = Frame(self.play_frame, 
-                                 width=self.board_size, 
-                                 height=20,
-                                 pady=20,
-                                 )
-        self.queen_frame.grid(row=0,column=0, rowspan=1, columnspan=6)
-
-
+from board import Board
 
 class NButton :
 
@@ -64,13 +25,12 @@ class NButton :
         self.btn.pack(anchor=CENTER, pady=20)
     
 
-
 class Level_Label(Board) :
 
     def __init__(self) :
+
         if not hasattr(self, "window") :
             super().__init__()
-
         self.welcome_frame = Frame(self.window)
         self.welcome_frame.grid(row=1, 
                            column=0, 
@@ -93,6 +53,7 @@ class Level_Label(Board) :
         self.render_level_label()
 
 
+# Main class for chess board playground
 class NCanvas(Board) :
 
     def __init__(self) :
@@ -115,6 +76,7 @@ class NCanvas(Board) :
         self.create_board()        
 
     def create_board(self) :
+
         self.board = []
         self.solved_board = []
         for i in range(0, self.queens.get()) :
@@ -128,9 +90,7 @@ class NCanvas(Board) :
 
         queens = self.queens.get()
         self.create_canvas()
-
         box_size = self.__size/queens
-
         for row in range(0,queens) :
 
             for col in range(0, queens):
@@ -238,7 +198,6 @@ class NCanvas(Board) :
         return row_safe and col_safe and diagonal_safe
     
     def row_check(self, board, row) :
-
         return not board[row].__contains__(1)
     
     def col_check(self, board, col):
@@ -304,8 +263,53 @@ class NCanvas(Board) :
         
         return upper_left and upper_right and lower_left and lower_right
 
+# class for showing how many queens left to solve
+class Queens(Board) :
 
-class LevelConfigBox(Board) : 
+    def __init__(self) -> None:
+        if not hasattr(self, "window") :
+            super().__init__()
+        self.col = 0
+        self.breaker = 5
+        self.left_queens = []
+
+    def render_queens(self) :
+
+        self.left_queens = []
+        parent = self.queen_frame
+        for i in parent.winfo_children() :
+            i.destroy()
+
+        for i in range(0,self.queens.get()) :
+            self.append_queens()
+
+    def pop_queens(self):
+        
+        if len(self.left_queens) == 0 :
+            return
+        self.left_queens[len(self.left_queens)-1].destroy()
+        self.left_queens.pop()
+
+        if len(self.left_queens) == 0 :
+            self.root.after_cancel(self.timer_id)
+            self.success()
+    
+    def append_queens(self) :
+
+        if len(self.left_queens) > self.queens.get() :
+            return
+        
+        image_label = Label(self.queen_frame, 
+                            image=self.queen_icon,
+                            width=40,
+                            height=40,
+                            )
+        self.left_queens.append(image_label)
+        image_label.grid(row=0, column=len(self.left_queens))
+
+
+# class for configuring Level and Time
+class Configer(Board) : 
 
     def __init__(self) -> None:
         if not hasattr(self, "window") :
@@ -408,7 +412,8 @@ class LevelConfigBox(Board) :
             showwarning("Invalid input", "The time input must be integer in minute")
 
 
-class MenuBar(LevelConfigBox) :
+# Setting Menu Bar
+class MenuBar(Configer) :
 
 
     def __init__(self) -> None:
@@ -432,49 +437,8 @@ class MenuBar(LevelConfigBox) :
         exit(1)
 
 
-class Queens(Board) :
 
-    def __init__(self) -> None:
-        if not hasattr(self, "window") :
-            super().__init__()
-        self.col = 0
-        self.breaker = 5
-        self.left_queens = []
-
-    def render_queens(self) :
-
-        self.left_queens = []
-        parent = self.queen_frame
-        for i in parent.winfo_children() :
-            i.destroy()
-
-        for i in range(0,self.queens.get()) :
-            self.append_queens()
-
-    def pop_queens(self):
-        
-        if len(self.left_queens) == 0 :
-            return
-        self.left_queens[len(self.left_queens)-1].destroy()
-        self.left_queens.pop()
-
-        if len(self.left_queens) == 0 :
-            self.root.after_cancel(self.timer_id)
-            self.success()
-    
-    def append_queens(self) :
-
-        if len(self.left_queens) > self.queens.get() :
-            return
-        
-        image_label = Label(self.queen_frame, 
-                            image=self.queen_icon,
-                            width=40,
-                            height=40,
-                            )
-        self.left_queens.append(image_label)
-        image_label.grid(row=0, column=len(self.left_queens))
-
+# Controller of the game
 class ControlPanel(Board):
     
     def __init__(self):
