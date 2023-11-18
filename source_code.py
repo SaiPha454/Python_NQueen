@@ -43,7 +43,6 @@ class Board(object):
         self.mn = 0
         self.sec = 0
         self.game_started = False
-        self.solved = False
 
 
 class NButton :
@@ -424,19 +423,14 @@ class ControlPanel(NCanvas):
     
     def start_game(self) :
         
-        if self.solved :
-            self.reset_board()
-        if not self.game_started :
-            self.reset_timer()
-            self.solved = False
-            self.game_started = True
-            self.start_timer()
+        self.reset_timer()
+        self.game_started = True
+        self.start_timer()
         self.start_button.btn.config(state="disabled")
     
     def reset_game(self) :
 
         self.reset_timer()
-        self.solved = False
         self.game_started = False
         self.reset_board()
         self.start_button.btn.config(state="normal")
@@ -448,7 +442,6 @@ class ControlPanel(NCanvas):
             self.solve()
 
     def end_game(self) :
-        self.solved = True
         self.game_started= False
         self.window.after_cancel(self.timer_id)
 
@@ -520,7 +513,6 @@ class LevelConfiger(ControlPanel, Level_Label) :
                 self.__level_window.destroy()
                 self.reset_timer()
                 self.start_button.btn.config(state="normal")
-                self.solved = False
                 self.game_started = False
         except TclError:
             showwarning("Invalid input", "The level input must be integer")

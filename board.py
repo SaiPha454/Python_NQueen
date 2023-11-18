@@ -41,4 +41,3 @@ class Board(object):
         self.mn = 0
         self.sec = 0
         self.game_started = False
-        self.solved = False
