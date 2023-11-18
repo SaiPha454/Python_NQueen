@@ -435,8 +435,10 @@ class ControlPanel(NCanvas):
 # class for configuring Level and Time
 class LevelConfiger(ControlPanel, Level_Label) : 
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self) :
+
+        ControlPanel.__init__(self)
+        Level_Label.__init__(self)
         self.__level = IntVar()
         self.__level.set(self.queens.get())
     
@@ -557,7 +559,6 @@ class ConfigurationMenu(LevelConfiger, TimeConfiger) :
         menubar.add_cascade(label="Settings", menu=filemenu, image=self.setting_img)
         self.window.config(menu=menubar)
 
-        super().__init__()
 
     def exit(self) :
         if askyesno("Quit", "Are you sure you want to Quit?"):
