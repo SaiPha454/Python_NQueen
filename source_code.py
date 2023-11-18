@@ -72,14 +72,14 @@ class GameTimeUpHandler():
     def __init__(self, window) :
         self.parent_window = window
 
-    def handler(self) :
+    def handler(self, queens) :
 
         game_over_window = Toplevel(self.parent_window)
         game_over_window.geometry("400x200")
         game_over_window.resizable(False, False)
         game_over_window.title("Time Up")
 
-        label = Label(game_over_window, text="Time Up!!!", font="Arial 25 bold", fg="red")
+        label = Label(game_over_window, text=f"NQueens Level {queens} \nTime Up!!!", font="Arial 25 bold", fg="red")
         label.pack(pady= 50)
         self.center_game_over_window(game_over_window)
 
@@ -470,7 +470,7 @@ class ControlPanel(NCanvas):
         self.timer.config(text=f"{self.mn:02}:{self.sec:02}")
         if self.timer_on.get() and  self.mn >= self.timer_limit_mn :
             self.end_game()
-            self.game_over_handler()
+            self.game_over_handler(self.queens.get())
             return
         self.timer_id = self.window.after(1000, self.start_timer)
 
@@ -526,9 +526,12 @@ class LevelConfiger(ControlPanel, Level_Label) :
             showwarning("Invalid input", "The level input must be integer")
 
 # Timer Configer
-class TimeConfiger:
+class TimeConfiger(Board):
 
     def __init__(self) :
+
+        if not hasattr(self, "window"):
+            super().__init__()
         
         self.__timer_limit_mn = IntVar()
         self.__timer_limit_mn.set(self.timer_limit_mn)
